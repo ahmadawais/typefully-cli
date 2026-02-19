@@ -5,13 +5,16 @@ import { apiRequest, display, spin } from '../utils/api.js';
 import { PLATFORMS } from '../types.js';
 import {
 	API_KEY_URL,
+	DEFAULT_TIMEZONE,
 	getApiKey,
 	getDefaultPlatforms,
 	getDefaultSocialSetId,
+	getDefaultTimezone,
 	getGlobalConfigFile,
 	getLocalConfigFile,
 	readConfigFile,
 	requireApiKey,
+	tzLabel,
 	writeConfig,
 } from '../utils/config.js';
 import { exitWithError, formatSocialSetsForDisplay } from '../utils/helpers.js';
@@ -41,6 +44,8 @@ function renderConfigShow(data: Record<string, unknown>): void {
 	} else {
 		console.log(pc.dim('  Default platforms: not set  ·  Run: typefully config set-platforms'));
 	}
+	const tz = getDefaultTimezone();
+	console.log(pc.dim(`  Default timezone: ${tz} (${tzLabel(tz)})`));
 	console.log('');
 }
 
@@ -189,6 +194,109 @@ export function registerConfigCommand(program: Command): void {
 			display(result, () => {
 				console.log('');
 				console.log(`  ${pc.green('✓')} Default social set saved: ${pc.bold(String(socialSetId))}`);
+				console.log(pc.dim(`  Config: ${configPath}`));
+				console.log('');
+			});
+		});
+
+	cmd
+		.command('set-timezone')
+		.description('Set default timezone for scheduling')
+		.option('--timezone <tz>', 'IANA timezone name (skips interactive)')
+		.option('--location <location>', 'Storage location: global or local')
+		.option('--scope <scope>', 'Alias for --location')
+		.action(async (opts: Record<string, string>) => {
+			const COMMON_TIMEZONES = [
+				{ value: 'America/Los_Angeles', label: 'America/Los_Angeles', hint: 'PST/PDT' },
+				{ value: 'America/Denver', label: 'America/Denver', hint: 'MST/MDT' },
+				{ value: 'America/Chicago', label: 'America/Chicago', hint: 'CST/CDT' },
+				{ value: 'America/New_York', label: 'America/New_York', hint: 'EST/EDT' },
+				{ value: 'America/Sao_Paulo', label: 'America/Sao_Paulo', hint: 'BRT' },
+				{ value: 'Europe/London', label: 'Europe/London', hint: 'GMT/BST' },
+				{ value: 'Europe/Paris', label: 'Europe/Paris', hint: 'CET/CEST' },
+				{ value: 'Europe/Istanbul', label: 'Europe/Istanbul', hint: 'TRT' },
+				{ value: 'Asia/Dubai', label: 'Asia/Dubai', hint: 'GST' },
+				{ value: 'Asia/Karachi', label: 'Asia/Karachi', hint: 'PKT' },
+				{ value: 'Asia/Kolkata', label: 'Asia/Kolkata', hint: 'IST' },
+				{ value: 'Asia/Shanghai', label: 'Asia/Shanghai', hint: 'CST' },
+				{ value: 'Asia/Tokyo', label: 'Asia/Tokyo', hint: 'JST' },
+				{ value: 'Australia/Sydney', label: 'Australia/Sydney', hint: 'AEST/AEDT' },
+				{ value: 'custom', label: 'Custom IANA timezone…', hint: 'enter manually' },
+			];
+
+			let timezone: string;
+
+			if (opts.timezone) {
+				timezone = opts.timezone;
+			} else {
+				const current = getDefaultTimezone();
+				const tzChoice = await clack.select({
+					message: 'Default timezone for scheduling',
+					initialValue: COMMON_TIMEZONES.some((t) => t.value === current) ? current : 'custom',
+					options: COMMON_TIMEZONES,
+				});
+				if (clack.isCancel(tzChoice)) {
+					clack.cancel('Cancelled.');
+					process.exit(0);
+				}
+
+				if (tzChoice === 'custom') {
+					const customTz = await clack.text({
+						message: 'Enter IANA timezone name',
+						placeholder: DEFAULT_TIMEZONE,
+						validate: (v = '') => {
+							if (!v.trim()) return 'Timezone is required';
+							try {
+								Intl.DateTimeFormat(undefined, { timeZone: v });
+							} catch {
+								return `Invalid timezone: ${v}`;
+							}
+						},
+					});
+					if (clack.isCancel(customTz)) {
+						clack.cancel('Cancelled.');
+						process.exit(0);
+					}
+					timezone = customTz as string;
+				} else {
+					timezone = tzChoice as string;
+				}
+			}
+
+			let location = opts.scope ?? opts.location;
+			if (!location) {
+				const choice = await clack.select({
+					message: 'Where should this be stored?',
+					options: [
+						{
+							value: 'global',
+							label: `Global ${pc.dim('(~/.config/typefully/)')}`,
+							hint: 'all projects',
+						},
+						{
+							value: 'local',
+							label: `Local ${pc.dim('(./.typefully/)')}`,
+							hint: 'this project only',
+						},
+					],
+				});
+				if (clack.isCancel(choice)) {
+					clack.cancel('Cancelled.');
+					process.exit(0);
+				}
+				location = choice as string;
+			}
+
+			const isLocal = location === 'local';
+			const configPath = isLocal ? getLocalConfigFile() : getGlobalConfigFile();
+			const existingConfig = readConfigFile(configPath) ?? {};
+			writeConfig(configPath, { ...existingConfig, defaultTimezone: timezone });
+
+			display({ success: true, default_timezone: timezone, config_path: configPath }, () => {
+				console.log('');
+				console.log(
+					`  ${pc.green('✓')} Default timezone saved: ${pc.bold(timezone)} ${pc.dim(`(${tzLabel(timezone)})`)}`,
+				);
 				console.log(pc.dim(`  Config: ${configPath}`));
 				console.log('');
 			});
