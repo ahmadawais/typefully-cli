@@ -9,13 +9,19 @@ Built on the [Typefully API](https://typefully.com/docs/api). [Typefully](https:
 ### 1. Install
 
 ```bash
-pnpm add -g typefully
+npm i -g typefully
 ```
 
 Or use directly with npx:
 
 ```bash
 npx typefully --help
+```
+
+or skills for your AI agent:
+
+```bash
+npx skills add ahmadawais/typefully-cli
 ```
 
 ### 2. Copy your API Key
@@ -31,7 +37,7 @@ typefully setup
 ```
 
 > [!TIP]
-> You can also set the API key as an environment variable: `export TYPEFULLY_API_KEY=your_key_here`
+> You can also set the API key as an environment variable: `export TYPEFULLY_API_KEY=your_key_here` but not needed if you run `typefully setup` which saves it to a config file.
 
 ### 4. Start using it
 

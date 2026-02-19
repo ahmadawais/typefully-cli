@@ -20,6 +20,19 @@
 		"typecheck": "tsc --noEmit",
 		"format": "biome format --write ."
 	},
+	"license": "MIT",
+	"keywords": [
+		"typefully",
+		"cli",
+		"twitter",
+		"x",
+		"threads",
+		"linkedin",
+		"social-media",
+		"scheduling",
+		"drafts",
+		"publishing"
+	],
 	"engines": {
 		"node": ">=18"
 	},
