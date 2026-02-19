@@ -1,3 +1,6 @@
+<img src="https://raw.githubusercontent.com/ahmadawais/typefully-cli/refs/heads/main/.github/cover.svg" alt="Typefully CLI" />
+
+
 # Typefully CLI
 
 A TypeScript CLI and AI agent skill for drafting, scheduling, and managing social media posts across X, LinkedIn, Threads, Bluesky, and Mastodon.
@@ -60,6 +63,9 @@ typefully drafts create --text "Scheduled post" --schedule next-free-slot
 # Output raw JSON (for scripts/pipes)
 typefully drafts list --json
 ```
+
+<img src="https://raw.githubusercontent.com/ahmadawais/typefully-cli/refs/heads/main/.github/image.svg" alt="Typefully CLI" />
+
 
 ## Output Modes
 
