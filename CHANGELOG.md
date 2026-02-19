@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0](https://github.com/ahmadawais/typefully-cli/compare/0.2.0...0.3.0) (2026-02-19)
+
+### Features
+
+* compress ([29ed8de](https://github.com/ahmadawais/typefully-cli/commit/29ed8de1779dd7441f34f6339045d6b6be6c4858))
+* compress ([b5b4a7d](https://github.com/ahmadawais/typefully-cli/commit/b5b4a7d216437bbc8060185f794fcb98057cebe9))
+* interactive scheduler with timezone config and browser open ([2c107dd](https://github.com/ahmadawais/typefully-cli/commit/2c107dd7372ab9806729c0c8336b8757abe04197))
+
+### Documentation
+
+* update README and spec for interactive scheduler and timezone config ([fbdb4bd](https://github.com/ahmadawais/typefully-cli/commit/fbdb4bd75996eb6df65f71819d9b7308e55191d7))
+
+### Improvements
+
+* taste ([7c948e6](https://github.com/ahmadawais/typefully-cli/commit/7c948e633a59cf6b25431b6118838b5b2e0c669d))
+
 ## [0.2.0](https://github.com/ahmadawais/typefully-cli/compare/0.1.1...0.2.0) (2026-02-19)
 
 ### Features
