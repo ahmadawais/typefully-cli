@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/ahmadawais/typefully-cli/refs/heads/main/.github/cover.svg" alt="Typefully CLI" />
+<img src="https://github.com/ahmadawais/typefully-cli/blob/main/.github/cover.png?raw=true" alt="Typefully CLI" />
 
 
 # Typefully CLI
@@ -64,7 +64,7 @@ typefully drafts create --text "Scheduled post" --schedule next-free-slot
 typefully drafts list --json
 ```
 
-<img src="https://raw.githubusercontent.com/ahmadawais/typefully-cli/refs/heads/main/.github/image.svg" alt="Typefully CLI" />
+<img src="https://github.com/ahmadawais/typefully-cli/blob/main/.github/image.png?raw=true" alt="Typefully CLI" />
 
 
 ## Output Modes
