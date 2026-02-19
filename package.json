@@ -3,7 +3,8 @@
 	"version": "0.1.1",
 	"type": "module",
 	"bin": {
-		"typefully": "./dist/index.js"
+		"typefully": "./dist/index.js",
+		"tfly": "./dist/index.js"
 	},
 	"main": "./dist/index.js",
 	"files": [
@@ -41,6 +42,7 @@
 		"commander": "^14.0.3",
 		"ora": "^9.3.0",
 		"picocolors": "^1.1.1",
+		"terminal-link": "^5.0.0",
 		"zod": "^4.3.6"
 	},
 	"devDependencies": {

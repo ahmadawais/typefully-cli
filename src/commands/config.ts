@@ -2,9 +2,11 @@ import * as clack from '@clack/prompts';
 import type { Command } from 'commander';
 import pc from 'picocolors';
 import { apiRequest, display, spin } from '../utils/api.js';
+import { PLATFORMS } from '../types.js';
 import {
 	API_KEY_URL,
 	getApiKey,
+	getDefaultPlatforms,
 	getDefaultSocialSetId,
 	getGlobalConfigFile,
 	getLocalConfigFile,
@@ -32,6 +34,12 @@ function renderConfigShow(data: Record<string, unknown>): void {
 		console.log(pc.dim(`  Default social set: ${defaultSet.id}  ·  from ${defaultSet.source}`));
 	} else {
 		console.log(pc.dim('  Default social set: not set  ·  Run: typefully config set-default'));
+	}
+	const defaultPlatforms = getDefaultPlatforms();
+	if (defaultPlatforms) {
+		console.log(pc.dim(`  Default platforms: ${defaultPlatforms.join(', ')}`));
+	} else {
+		console.log(pc.dim('  Default platforms: not set  ·  Run: typefully config set-platforms'));
 	}
 	console.log('');
 }
@@ -184,5 +192,71 @@ export function registerConfigCommand(program: Command): void {
 				console.log(pc.dim(`  Config: ${configPath}`));
 				console.log('');
 			});
+		});
+
+	cmd
+		.command('set-platforms')
+		.description('Set default platforms for new drafts')
+		.option('--platforms <platforms>', 'Comma-separated platforms (skips interactive)')
+		.option('--location <location>', 'Storage location: global or local')
+		.option('--scope <scope>', 'Alias for --location')
+		.action(async (opts: Record<string, string>) => {
+			let platformList: string[];
+
+			if (opts.platforms) {
+				platformList = opts.platforms.split(',').map((p) => p.trim());
+			} else {
+				const selected = await clack.multiselect({
+					message: 'Default platforms for new drafts',
+					initialValues: ['x'] as string[],
+					options: PLATFORMS.map((plat) => ({ value: plat, label: plat })),
+				});
+				if (clack.isCancel(selected)) {
+					clack.cancel('Cancelled.');
+					process.exit(0);
+				}
+				platformList = selected as string[];
+			}
+
+			let location = opts.scope ?? opts.location;
+			if (!location) {
+				const choice = await clack.select({
+					message: 'Where should this be stored?',
+					options: [
+						{
+							value: 'global',
+							label: `Global ${pc.dim('(~/.config/typefully/)')}`,
+							hint: 'all projects',
+						},
+						{
+							value: 'local',
+							label: `Local ${pc.dim('(./.typefully/)')}`,
+							hint: 'this project only',
+						},
+					],
+				});
+				if (clack.isCancel(choice)) {
+					clack.cancel('Cancelled.');
+					process.exit(0);
+				}
+				location = choice as string;
+			}
+
+			const isLocal = location === 'local';
+			const configPath = isLocal ? getLocalConfigFile() : getGlobalConfigFile();
+			const existingConfig = readConfigFile(configPath) ?? {};
+			writeConfig(configPath, { ...existingConfig, defaultPlatforms: platformList });
+
+			display(
+				{ success: true, default_platforms: platformList, config_path: configPath },
+				() => {
+					console.log('');
+					console.log(
+						`  ${pc.green('✓')} Default platforms saved: ${pc.bold(platformList.join(', '))}`,
+					);
+					console.log(pc.dim(`  Config: ${configPath}`));
+					console.log('');
+				},
+			);
 		});
 }

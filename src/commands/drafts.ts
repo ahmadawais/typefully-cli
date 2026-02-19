@@ -1,9 +1,10 @@
 import fs from 'node:fs';
 import type { Command } from 'commander';
 import pc from 'picocolors';
+import terminalLink from 'terminal-link';
 import { PLATFORMS } from '../types.js';
 import { apiRequest, display, spin } from '../utils/api.js';
-import { requireSocialSetId } from '../utils/config.js';
+import { getDefaultPlatforms, requireSocialSetId } from '../utils/config.js';
 import {
 	exitWithError,
 	parseCsvArg,
@@ -21,14 +22,24 @@ function enabledPlatforms(draft: DraftRaw): string {
 		.join(' · ');
 }
 
-function firstPostText(draft: DraftRaw): string {
-	if (!draft.platforms) return '';
-	for (const config of Object.values(
-		draft.platforms as Record<string, { enabled?: boolean; posts?: { text?: string }[] }>,
-	)) {
-		if (config.enabled && config.posts?.[0]?.text) {
-			const t = config.posts[0].text;
-			return t.length > 80 ? `${t.slice(0, 80)}…` : t;
+export function firstPostText(draft: DraftRaw, maxLen = 80): string {
+	// Top-level text field (list endpoint)
+	if (draft.text) {
+		const t = String(draft.text);
+		return t.length > maxLen ? `${t.slice(0, maxLen)}…` : t;
+	}
+	// Top-level posts array
+	if (Array.isArray(draft.posts)) {
+		const t = (draft.posts as { text?: string }[])[0]?.text;
+		if (t) return t.length > maxLen ? `${t.slice(0, maxLen)}…` : t;
+	}
+	// Nested platforms (single-draft response)
+	if (draft.platforms) {
+		for (const config of Object.values(
+			draft.platforms as Record<string, { posts?: { text?: string }[] }>,
+		)) {
+			const t = config.posts?.[0]?.text;
+			if (t) return t.length > maxLen ? `${t.slice(0, maxLen)}…` : t;
 		}
 	}
 	return '';
@@ -75,10 +86,20 @@ export function renderDraft(data: DraftRaw, verb?: string): void {
 	const id = String(data.id ?? '');
 	const status = String(data.status ?? 'draft');
 	const platforms = enabledPlatforms(data);
+	const preview = firstPostText(data);
 	const prefix = verb ? `${pc.green('✓')} ${verb}  ` : '';
+
+	const draftUrl = String(data.share_url ?? `https://typefully.com/?d=${id}`);
+	const linkedId = terminalLink(pc.bold(id), draftUrl);
+
 	console.log('');
-	console.log(`  ${prefix}${pc.bold(id)}  ·  ${status}  ·  ${pc.dim(platforms)}`);
-	if (data.share_url) console.log(pc.dim(`  Share: ${data.share_url}`));
+	console.log(`  ${prefix}${linkedId}  ·  ${statusBadge(status)}  ·  ${pc.cyan(platforms)}`);
+	if (preview) console.log(`  ${pc.dim(preview)}`);
+	if (data.scheduled_at) {
+		const date = new Date(String(data.scheduled_at)).toLocaleString();
+		console.log(`  ${pc.dim('Scheduled:')} ${pc.yellow(date)}`);
+	}
+	if (data.share_url) console.log(`  ${pc.dim('Share:')} ${pc.cyan(String(data.share_url))}`);
 	console.log('');
 }
 
@@ -210,9 +231,16 @@ export function registerDraftsCommand(program: Command): void {
 			} else if (opts.platform) {
 				platformList = (opts.platform as string).split(',').map((p) => p.trim());
 			} else {
-				const defaultPlatform = await getFirstConnectedPlatform(id);
-				if (!defaultPlatform) exitWithError('No connected platforms found. Specify --platform');
-				platformList = [defaultPlatform];
+				const saved = getDefaultPlatforms();
+				if (saved?.length) {
+					const connected = await getAllConnectedPlatforms(id);
+					platformList = saved.filter((p) => connected.includes(p));
+					if (platformList.length === 0) platformList = [...connected];
+				} else {
+					const defaultPlatform = await getFirstConnectedPlatform(id);
+					if (!defaultPlatform) exitWithError('No connected platforms found. Specify --platform');
+					platformList = [defaultPlatform];
+				}
 			}
 
 			const posts = splitThreadText(text);

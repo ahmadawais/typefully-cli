@@ -4,6 +4,7 @@ import { z } from 'zod/v4';
 export const ConfigSchema = z.object({
 	apiKey: z.string().optional(),
 	defaultSocialSetId: z.union([z.string(), z.number()]).optional(),
+	defaultPlatforms: z.array(z.string()).optional(),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

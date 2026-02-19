@@ -34,6 +34,9 @@ Last updated: 2026-02-18
    - [media status](#media-status)
    - [config show](#config-show)
    - [config set-default](#config-set-default)
+   - [config set-platforms](#config-set-platforms)
+   - [rm (alias)](#rm-alias)
+   - [Default command (tfly)](#default-command-tfly)
 7. [Thread Syntax](#thread-syntax)
 8. [Error Shape](#error-shape)
 9. [Environment Variables](#environment-variables)
@@ -43,10 +46,11 @@ Last updated: 2026-02-18
 ## Invocation
 
 ```
-typefully [global-flags] <command> [subcommand] [arguments] [options]
+typefully [global-flags] [text] [command] [subcommand] [arguments] [options]
+tfly [global-flags] [text] [command] [subcommand] [arguments] [options]
 ```
 
-The binary name is `typefully`. All commands and subcommands are lowercase, hyphen-separated.
+The binary names are `typefully` and `tfly` (short alias). All commands and subcommands are lowercase, hyphen-separated.
 
 ---
 
@@ -91,7 +95,8 @@ The banner is shown once per invocation before the first command action, **unles
 ```json
 {
   "apiKey": "typ_xxxx",
-  "defaultSocialSetId": 12345
+  "defaultSocialSetId": 12345,
+  "defaultPlatforms": ["x", "linkedin"]
 }
 ```
 
@@ -336,7 +341,7 @@ typefully drafts create [social_set_id] [options]
 |------|-------|-------------|
 | `--text <text>` | | Post content. Use `---` on its own line to create thread posts. |
 | `--file <path>` | `-f` | Read content from file (overrides `--text`). |
-| `--platform <platforms>` | | Comma-separated platform names. Auto-selects first connected if omitted. |
+| `--platform <platforms>` | | Comma-separated platform names. Uses `defaultPlatforms` config if set, otherwise first connected. |
 | `--all` | | Post to all connected platforms. Mutually exclusive with `--platform`. |
 | `--media <media_ids>` | | Comma-separated media IDs to attach to the first post. |
 | `--title <title>` | | Internal draft title (never published). |
@@ -690,6 +695,7 @@ typefully config show
   "active_source": "/Users/you/.config/typefully/config.json",
   "api_key_preview": "typ_xxxx...",
   "default_social_set": { "id": 123, "source": "/Users/you/.config/typefully/config.json" },
+  "default_platforms": ["x", "linkedin"],
   "config_files": {
     "local": { "path": ".typefully/config.json", "has_key": false, "has_default_social_set": false },
     "global": { "path": "/Users/you/.config/typefully/config.json", "has_key": true, "has_default_social_set": true }
@@ -743,6 +749,110 @@ typefully config set-default [social_set_id] [options]
   "scope": "global"
 }
 ```
+
+---
+
+### `config set-platforms`
+
+Sets the default platforms used when creating drafts without `--platform` or `--all`.
+
+```
+typefully config set-platforms [options]
+tfly config set-platforms [options]
+```
+
+**Options**
+
+| Flag | Description |
+|------|-------------|
+| `--platforms <platforms>` | Comma-separated platform list (skips interactive). |
+| `--location <global\|local>` | Where to save: `global` or `local`. Interactive if omitted. |
+| `--scope <global\|local>` | Alias for `--location`. |
+
+**Behavior**
+
+- If `--platforms` is omitted: shows a clack multiselect of all 5 supported platforms, pre-ticking `x`.
+- Saved preference is used by `drafts create`, `create-draft`, and the default `tfly` command when no `--platform` flag is given.
+- If saved platforms don't match connected platforms on the social set, falls back to first connected.
+
+**JSON output shape**
+
+```json
+{
+  "success": true,
+  "default_platforms": ["x", "linkedin", "threads"],
+  "config_path": "/Users/you/.config/typefully/config.json"
+}
+```
+
+---
+
+### `rm` (alias)
+
+Deletes a draft. Provide a draft ID for direct deletion, or omit it for an interactive clack multiselect picker.
+
+```
+tfly rm [draft_id] [options]
+typefully rm [draft_id] [options]
+```
+
+**Arguments**
+
+| Argument | Description |
+|----------|-------------|
+| `[draft_id]` | Draft ID to delete. Omit to pick interactively. |
+
+**Options**
+
+| Flag | Description |
+|------|-------------|
+| `--social-set-id <id>` | Social set ID. Uses configured default if omitted. |
+| `--status <status>` | Filter drafts shown in picker. Default: `draft`. |
+| `--limit <n>` | Max drafts loaded in picker. Default: `20`. |
+
+**Behavior**
+
+- **With `draft_id`**: deletes immediately, no prompts.
+- **Without `draft_id`**: fetches the draft list, then fetches each draft in parallel to load text content, shows a multiselect, asks for confirmation, then deletes selected drafts.
+
+**JSON output shape**
+
+```json
+{ "success": true, "message": "Draft deleted" }
+```
+
+---
+
+### Default command (`tfly` / `typefully`)
+
+Running `tfly` (or `typefully`) with no subcommand creates a draft directly or launches an interactive flow.
+
+```
+tfly [text]
+typefully [text]
+```
+
+**Arguments**
+
+| Argument | Description |
+|----------|-------------|
+| `[text]` | Post text. If provided: creates a draft directly using default platforms and social set. If omitted: launches interactive clack flow. |
+
+**Behavior — with text**
+
+- Uses configured `defaultPlatforms` (or first connected platform as fallback).
+- Creates draft immediately with no prompts (same as `create-draft "<text>"`).
+
+**Behavior — without text (interactive)**
+
+1. clack `text` prompt for post content.
+2. clack `multiselect` for platforms — pre-ticks `defaultPlatforms` if configured.
+3. clack `select` for timing: `Save as draft` / `Schedule: next free slot` / `Publish now`.
+4. Creates draft, shows result.
+
+Cancelling at any prompt (Ctrl+C) exits cleanly with code 0.
+
+**JSON output shape** — single draft object (same as `drafts create`).
 
 ---
 

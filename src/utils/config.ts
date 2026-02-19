@@ -114,6 +114,17 @@ export async function requireApiKey(): Promise<ApiKeyInfo> {
 	return { source: configPath, key: apiKey };
 }
 
+export function getDefaultPlatforms(): readonly string[] | null {
+	const localPath = path.join(process.cwd(), LOCAL_CONFIG_FILE);
+	const localConfig = readConfigFile(localPath);
+	if (localConfig?.defaultPlatforms?.length) return localConfig.defaultPlatforms;
+
+	const globalConfig = readConfigFile(GLOBAL_CONFIG_FILE);
+	if (globalConfig?.defaultPlatforms?.length) return globalConfig.defaultPlatforms;
+
+	return null;
+}
+
 export function getDefaultSocialSetId(): DefaultSocialSet | null {
 	const localPath = path.join(process.cwd(), LOCAL_CONFIG_FILE);
 	const localConfig = readConfigFile(localPath);

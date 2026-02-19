@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import { registerAliasCommands } from './commands/aliases.js';
 import { registerConfigCommand } from './commands/config.js';
 import { registerDraftsCommand } from './commands/drafts.js';
+import { runDraft } from './commands/interactive.js';
 import { registerMeCommand } from './commands/me.js';
 import { registerMediaCommand } from './commands/media.js';
 import { registerSetupCommand } from './commands/setup.js';
@@ -22,6 +23,10 @@ export function createCli(): Command {
 		.description('Manage social media posts via the Typefully API')
 		.version(pkg.version, '-v, --version')
 		.option('-j, --json', 'Output raw JSON instead of human-readable text')
+		.argument('[text]', 'Post text — creates a draft directly, or omit for interactive mode')
+		.action(async (text: string | undefined) => {
+			await runDraft(text);
+		})
 		.hook('preAction', (_thisCommand) => {
 			const jsonMode = !!(program.opts() as { json?: boolean }).json;
 			setJsonMode(jsonMode);

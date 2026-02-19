@@ -12,59 +12,24 @@ allowed-tools: Bash(typefully*)
 
 Create, schedule, and publish social media content across multiple platforms using [Typefully](https://typefully.com).
 
-> **Freshness check**: If more than 30 days have passed since the `last-updated` date above, inform the user that this skill may be outdated and point them to the update options below.
+## Quick Start
 
-## Keeping This Skill Updated
-
-**Source**: [github.com/typefully/agent-skills](https://github.com/typefully/agent-skills)
-**API docs**: [typefully.com/docs/api](https://typefully.com/docs/api)
-
-Update methods by installation type:
-
-| Installation | How to update |
-|--------------|---------------|
-| CLI (`npx skills`) | `npx skills update` |
-| Claude Code plugin | `/plugin update typefully@typefully-skills` |
-| Cursor | Remote rules auto-sync from GitHub |
-| Manual | Pull latest from repo or re-copy `skills/typefully/` |
-
-API changes ship independently—updating the skill ensures you have the latest commands and workflows.
-
-## Setup
-
-Before using this skill, ensure:
-
-1. **API Key**: Run the setup command to configure your API key securely
-   - Get your key at https://typefully.com/?settings=api
-   - Run: `typefully setup`
-   - Or set environment variable: `export TYPEFULLY_API_KEY=your_key`
-
-2. **Requirements**: Node.js 18+. Install the CLI with `npm install -g typefully` or run via `npx typefully`.
-
-**Config priority** (highest to lowest):
-1. `TYPEFULLY_API_KEY` environment variable
-2. `./.typefully/config.json` (project-local, in user's working directory)
-3. `~/.config/typefully/config.json` (user-global)
+```bash
+tfly                              # interactive — pick text, platform, schedule
+tfly "Hello, world!"              # instant draft (uses default platforms)
+tfly rm                           # interactive draft picker to delete
+tfly rm <draft_id>                # delete specific draft
+```
 
 ### Handling "API key not found" errors
 
 **CRITICAL**: When you receive an "API key not found" error from the CLI:
 
-1. **Tell the user to run the setup command** - The setup is interactive and requires user input, so you cannot run it on their behalf:
-   ```bash
-   typefully setup
-   ```
+**Tell the user to run the setup command** - The setup is interactive and requires user input, so you cannot run it on their behalf:
+```sh
+typefully setup
+```
 
-2. **Stop and wait** - After telling the user to run setup, **do not continue with the task**. You cannot create drafts, upload media, or perform any API operations without a valid API key. Wait for the user to complete setup and confirm before proceeding.
-
-3. **DO NOT** attempt any of the following:
-   - Searching for API keys in macOS Keychain, `.env` files, or other locations
-   - Grepping through config files or directories
-   - Looking in the user's Trash or other system folders
-   - Constructing complex shell commands to find credentials
-   - Drafting content or preparing posts before setup is complete
-
-The setup command will interactively guide the user through configuration. Trust the CLI's error messages and follow their instructions.
 
 ## Social Sets
 
@@ -79,7 +44,7 @@ The Typefully API uses the term "social set" to refer to what users commonly cal
 When determining which social set to use:
 
 1. **Check for a configured default first** - Run `typefully config show` to see if a default is already set:
-   ```bash
+   ```sh
    typefully config show
    ```
    If `default_social_set` is configured, the CLI uses it automatically when you omit the social_set_id.
@@ -94,7 +59,7 @@ When determining which social set to use:
 3. **Single social set shortcut** - If the user only has one social set and no default is configured, use it automatically
 
 4. **Multiple social sets, no default** - Ask the user which to use, then **offer to save their choice as the default**:
-   ```bash
+   ```sh
    typefully config set-default
    ```
    This command lists available social sets and saves the choice to the config file.
@@ -114,6 +79,8 @@ When determining which social set to use:
 | "Schedule this for tomorrow" | `typefully drafts create ... --schedule "2025-01-21T09:00:00Z"` |
 | "Post this now" | `typefully drafts create ... --schedule now` or `typefully drafts publish <draft_id> --use-default` |
 | "Add notes/ideas to the draft" | `typefully drafts create ... --scratchpad "Your notes here"` |
+| "Set my default platforms" | `typefully config set-platforms` |
+| "Delete a draft" | `tfly rm [draft_id]` |
 | "Check available tags" | `typefully tags list` |
 
 ## Workflow
@@ -121,25 +88,25 @@ When determining which social set to use:
 Follow this workflow when creating posts:
 
 1. **Check if a default social set is configured**:
-   ```bash
+   ```sh
    typefully config show
    ```
    If `default_social_set` shows an ID, skip to step 3.
 
 2. **If no default, list social sets** to find available options:
-   ```bash
+   ```sh
    typefully social-sets list
    ```
    If multiple exist, ask the user which to use and offer to set it as default:
-   ```bash
+   ```sh
    typefully config set-default
    ```
 
 3. **Create drafts** (social_set_id is optional if default is configured):
-   ```bash
+   ```sh
    typefully drafts create --text "Your post"
    ```
-   Note: If `--platform` is omitted, the first connected platform is auto-selected.
+   Note: If `--platform` is omitted, uses `defaultPlatforms` config if set, else first connected platform. Set defaults with `typefully config set-platforms`.
 
    **For multi-platform posts**: See [Publishing to Multiple Platforms](#publishing-to-multiple-platforms) — always use a single draft, even when content differs per platform.
 
@@ -150,17 +117,17 @@ Follow this workflow when creating posts:
 Tags help organize drafts within Typefully. **Always check existing tags before creating new ones**:
 
 1. **List existing tags first**:
-   ```bash
+   ```sh
    typefully tags list
    ```
 
 2. **Use existing tags when available** - if a tag with the desired name already exists, use it directly when creating drafts:
-   ```bash
+   ```sh
    typefully drafts create --text "..." --tags existing-tag-name
    ```
 
 3. **Only create new tags if needed** - if the tag doesn't exist, create it:
-   ```bash
+   ```sh
    typefully tags create --name "New Tag"
    ```
 
@@ -172,9 +139,9 @@ If a single draft needs to be created for different platforms, you need to make 
 
 When the content is the same across platforms, create a single draft with multiple platforms:
 
-```bash
+```sh
 # Specific platforms
-typefully drafts create --platform x,linkedin --text "Big announcement!"
+typefully drafts create --platform x,linkedin,threads,bluesky --text "Big announcement!"
 
 # All connected platforms
 typefully drafts create --all --text "Posting everywhere!"
@@ -182,7 +149,7 @@ typefully drafts create --all --text "Posting everywhere!"
 
 **IMPORTANT**: When content should be tailored (e.g., X thread with a LinkedIn post version), **still use a single draft** — create with one platform first, then update to add the other:
 
-```bash
+```sh
 # 1. Create draft with the primary platform first
 typefully drafts create --platform linkedin --text "Excited to share our new feature..."
 # Returns: { "id": "draft-123", ... }
@@ -270,11 +237,26 @@ All drafts commands support an optional `[social_set_id]` positional argument or
 | `typefully setup --key <key> --no-default` | Non-interactive setup, skip default social set selection |
 | `typefully config show` | Show current config, API key source, and default social set |
 | `typefully config set-default [social_set_id]` | Set default social set (interactive if ID omitted) |
+| `typefully config set-platforms` | Set default platforms used when creating drafts (interactive multiselect) |
+| `typefully config set-platforms --platforms x,linkedin` | Set default platforms non-interactively |
+
+### Shortcuts (`tfly`)
+
+`tfly` is a short alias for `typefully`. The default command creates drafts directly:
+
+| Command | Description |
+|---------|-------------|
+| `tfly "text"` | Create draft instantly with default platforms — no flags needed |
+| `tfly` | Interactive flow: prompts for text, platforms (pre-ticked from config), and schedule |
+| `tfly rm` | Interactive picker — loads drafts, pick one or more to delete |
+| `tfly rm <draft_id>` | Delete a specific draft directly |
+| `tfly create-draft "text"` | Full `create-draft` alias with all flag support |
+| `tfly update-draft <id> "text"` | Full `update-draft` alias with all flag support |
 
 ## Examples
 
 ### Set up default social set
-```bash
+```sh
 # Check current config
 typefully config show
 
@@ -286,12 +268,12 @@ typefully config set-default 123 --location global
 ```
 
 ### Create a tweet (using default social set)
-```bash
+```sh
 typefully drafts create --text "Hello, world!"
 ```
 
 ### Create a tweet with explicit social_set_id
-```bash
+```sh
 # Positional
 typefully drafts create 123 --text "Hello, world!"
 
@@ -300,52 +282,52 @@ typefully drafts create --social-set-id 123 --text "Hello, world!"
 ```
 
 ### Create a cross-platform post (specific platforms)
-```bash
+```sh
 typefully drafts create --platform x,linkedin,threads --text "Big announcement!"
 ```
 
 ### Create a post on all connected platforms
-```bash
+```sh
 typefully drafts create --all --text "Posting everywhere!"
 ```
 
 ### Create and schedule for next slot
-```bash
+```sh
 typefully drafts create --text "Scheduled post" --schedule next-free-slot
 ```
 
 ### Create with tags
-```bash
+```sh
 typefully drafts create --text "Marketing post" --tags marketing,product
 ```
 
 ### List scheduled posts sorted by date
-```bash
+```sh
 typefully drafts list --status scheduled --sort scheduled_date
 ```
 
 ### Reply to a tweet
-```bash
+```sh
 typefully drafts create --platform x --text "Great thread!" --reply-to "https://x.com/user/status/123456"
 ```
 
 ### Post to an X community
-```bash
+```sh
 typefully drafts create --platform x --text "Community update" --community 1493446837214187523
 ```
 
 ### Create draft with share URL
-```bash
+```sh
 typefully drafts create --text "Check this out" --share
 ```
 
 ### Create draft with scratchpad notes
-```bash
+```sh
 typefully drafts create --text "Launching next week!" --scratchpad "Draft for product launch. Coordinate with marketing team before publishing."
 ```
 
 ### Upload media and create post with it
-```bash
+```sh
 # Single command handles upload + polling - returns when ready!
 typefully media upload ./image.jpg
 # Returns: {"media_id": "abc-123-def", "status": "ready", "message": "Media uploaded and ready"}
@@ -355,7 +337,7 @@ typefully drafts create --text "Check out this image!" --media abc-123-def
 ```
 
 ### Upload multiple media files
-```bash
+```sh
 # Upload each file (each waits for processing)
 typefully media upload ./photo1.jpg  # Returns media_id: id1
 typefully media upload ./photo2.jpg  # Returns media_id: id2
@@ -365,7 +347,7 @@ typefully drafts create --text "Photo dump!" --media id1,id2
 ```
 
 ### Add media to an existing draft
-```bash
+```sh
 # Upload media
 typefully media upload ./new-image.jpg  # Returns media_id: xyz
 
@@ -374,12 +356,12 @@ typefully drafts update 456 --text "Updated post with image" --media xyz --use-d
 ```
 
 ### Setup (interactive)
-```bash
+```sh
 typefully setup
 ```
 
 ### Setup (non-interactive, for scripts/CI)
-```bash
+```sh
 # Auto-selects default social set if only one exists
 typefully setup --key typ_xxx --location global
 
@@ -420,7 +402,7 @@ The `--scratchpad` option attaches internal notes directly to the Typefully draf
 - Are private and never published to social media
 - Are perfect for storing thread expansion ideas, research notes, context, etc.
 
-```bash
+```sh
 # CORRECT: Notes attached to the draft in Typefully
 typefully drafts create --social-set-id 123 --text "My post" --scratchpad "Ideas for expanding: 1) Add stats 2) Include quote"
 
@@ -446,6 +428,10 @@ When in doubt, create drafts for user review rather than publishing directly.
 ## Tips
 
 - **Smart platform default**: If `--platform` is omitted, the first connected platform is auto-selected
+- **Default platforms config**: Run `typefully config set-platforms` to save preferred platforms (e.g. `x,linkedin,threads`) — used automatically on every new draft
+- **Short alias**: Use `tfly` instead of `typefully` for all commands
+- **Interactive mode**: Run `tfly` with no args to get a guided prompt for text, platforms, and schedule
+- **Delete interactively**: `tfly rm` loads your drafts and lets you pick which to delete
 - **All platforms**: Use `--all` to post to all connected platforms at once
 - **Character limits**: X (280), LinkedIn (3000), Threads (500), Bluesky (300), Mastodon (500)
 - **Thread creation**: Use `---` on its own line to split into multiple posts (thread)

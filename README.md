@@ -45,24 +45,24 @@ typefully setup
 ### 4. Start using it
 
 ```bash
-# Create a tweet
-typefully drafts create --text "Hello, world!"
+tfly                              # interactive — pick text, platform, schedule
+tfly "Hello, world!"              # instant draft from text
 
-# Quick alias — positional text, no flags needed
-typefully create-draft "Hello, world!"
+tfly rm                           # interactive — pick drafts to delete
+tfly rm <draft_id>                # delete a specific draft
 
-# List scheduled posts
-typefully drafts list --status scheduled
-
-# Create a cross-platform post
-typefully drafts create --platform x,linkedin --text "Big announcement!"
-
-# Schedule for next available slot
-typefully drafts create --text "Scheduled post" --schedule next-free-slot
-
-# Output raw JSON (for scripts/pipes)
-typefully drafts list --json
+tfly drafts list --status scheduled
+tfly drafts list --json           # raw JSON for scripts/pipes
 ```
+
+#### Aliases (short forms)
+
+| Alias | Equivalent |
+|-------|-----------|
+| `tfly "text"` | `typefully drafts create --text "text"` |
+| `tfly create-draft "text"` | same, with full flag support |
+| `tfly update-draft <id> "text"` | `typefully drafts update` |
+| `tfly rm [draft_id]` | `typefully drafts delete` |
 
 <img src="https://github.com/ahmadawais/typefully-cli/blob/main/.github/image.png?raw=true" alt="Typefully CLI" />
 
@@ -102,6 +102,8 @@ typefully config show
 typefully config set-default                            # interactive
 typefully config set-default 123 --location global
 typefully config set-default 123 --scope local         # --scope is an alias for --location
+typefully config set-platforms                         # interactive multiselect
+typefully config set-platforms --platforms x,linkedin,threads
 ```
 
 ### User & Social Sets
@@ -126,6 +128,7 @@ typefully drafts get <draft_id> --use-default
 typefully drafts get <social_set_id> <draft_id>
 
 # Create
+tfly "Post content"                            # alias for `typefully drafts create --text "Post content"`
 typefully drafts create --text "Post content"
 typefully drafts create -f ./post.txt                  # -f is short for --file
 typefully drafts create --text "..." --platform x,linkedin
@@ -203,7 +206,8 @@ Config files are stored as JSON with `0600` permissions:
 ```json
 {
   "apiKey": "typ_xxxx",
-  "defaultSocialSetId": 12345
+  "defaultSocialSetId": 12345,
+  "defaultPlatforms": ["x", "linkedin"]
 }
 ```
 
@@ -238,7 +242,7 @@ npx skills add ahmadawais/typefully-cli
 
 - [Typefully](https://typefully.com)
 - [API Documentation](https://typefully.com/docs/api)
-- [CLI Spec](./CLI-SPEC.md)
+- [CLI Spec](./skills/spec.md)
 
 ## License
 

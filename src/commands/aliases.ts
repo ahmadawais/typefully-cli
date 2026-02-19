@@ -1,9 +1,16 @@
 import fs from 'node:fs';
 import type { Command } from 'commander';
+import * as p from '@clack/prompts';
+import pc from 'picocolors';
 import { apiRequest, display, spin } from '../utils/api.js';
-import { requireSocialSetId } from '../utils/config.js';
+import { getDefaultPlatforms, requireSocialSetId } from '../utils/config.js';
 import { exitWithError, parseCsvArg, splitThreadText } from '../utils/helpers.js';
-import { getAllConnectedPlatforms, getFirstConnectedPlatform, renderDraft } from './drafts.js';
+import {
+	getAllConnectedPlatforms,
+	firstPostText,
+	getFirstConnectedPlatform,
+	renderDraft,
+} from './drafts.js';
 
 type DraftRaw = Record<string, unknown>;
 
@@ -51,9 +58,16 @@ export function registerAliasCommands(program: Command): void {
 			} else if (opts.platform) {
 				platformList = (opts.platform as string).split(',').map((p) => p.trim());
 			} else {
-				const defaultPlatform = await getFirstConnectedPlatform(id);
-				if (!defaultPlatform) exitWithError('No connected platforms found. Specify --platform');
-				platformList = [defaultPlatform];
+				const saved = getDefaultPlatforms();
+				if (saved?.length) {
+					const connected = await getAllConnectedPlatforms(id);
+					platformList = saved.filter((p) => connected.includes(p));
+					if (platformList.length === 0) platformList = [...connected];
+				} else {
+					const defaultPlatform = await getFirstConnectedPlatform(id);
+					if (!defaultPlatform) exitWithError('No connected platforms found. Specify --platform');
+					platformList = [defaultPlatform];
+				}
 			}
 
 			const posts = splitThreadText(text);
@@ -207,4 +221,105 @@ export function registerAliasCommands(program: Command): void {
 				display(data, () => renderDraft(data as DraftRaw, 'Draft updated'));
 			},
 		);
+
+	// rm: delete a draft — positional draft_id or interactive picker
+	program
+		.command('rm')
+		.description('Delete a draft — provide draft_id or pick interactively')
+		.argument('[draft_id]', 'Draft ID to delete (omit for interactive picker)')
+		.option('--social-set-id <id>', 'Social set ID (uses default if omitted)')
+		.option('--status <status>', 'Filter drafts by status in picker (default: draft)')
+		.option('--limit <n>', 'Max drafts to show in picker (default: 20)')
+		.action(async (draftId: string | undefined, opts: Record<string, unknown>) => {
+			const socialSetId = requireSocialSetId((opts.socialSetId as string | undefined) ?? null);
+
+			// Direct delete — no interaction
+			if (draftId) {
+				const spinner = spin('Deleting draft…');
+				spinner.start();
+				await apiRequest('DELETE', `/social-sets/${socialSetId}/drafts/${draftId}`);
+				spinner.succeed('Draft deleted');
+				display({ success: true, message: 'Draft deleted' }, () => {});
+				return;
+			}
+
+			// Interactive picker
+			const fetchSpinner = p.spinner();
+			fetchSpinner.start('Loading drafts…');
+
+			const params = new URLSearchParams();
+			params.set('limit', String(opts.limit ?? '20'));
+			params.set('status', String(opts.status ?? 'draft'));
+			const data = (await apiRequest(
+				'GET',
+				`/social-sets/${socialSetId}/drafts?${params}`,
+			)) as Record<string, unknown>;
+
+			const results = (data.results ?? []) as DraftRaw[];
+
+			if (results.length === 0) {
+				fetchSpinner.stop('No drafts found.');
+				p.outro('Nothing to delete.');
+				return;
+			}
+
+			// Fetch full draft details in parallel to get text content
+			const fullDrafts = await Promise.all(
+				results.map((draft) =>
+					apiRequest('GET', `/social-sets/${socialSetId}/drafts/${draft.id}`).catch(() => draft),
+				),
+			);
+
+			fetchSpinner.stop(`${fullDrafts.length} draft${fullDrafts.length !== 1 ? 's' : ''} loaded`);
+
+			// Build multiselect options
+			const options = (fullDrafts as DraftRaw[]).map((draft) => {
+				const id = String(draft.id ?? '');
+				const shortId = id.slice(0, 8);
+				const platforms = draft.platforms
+					? Object.entries(draft.platforms as Record<string, { enabled?: boolean }>)
+							.filter(([, v]) => v?.enabled !== false)
+							.map(([k]) => k)
+							.join(' · ')
+					: '';
+				const preview = firstPostText(draft, 60);
+				return {
+					value: id,
+					label: preview || pc.dim('(no text)'),
+					hint: platforms ? `${shortId}  ·  ${platforms}` : shortId,
+				};
+			});
+
+			const selected = await p.multiselect({
+				message: `Pick drafts to delete  ${pc.dim(`(${results.length} loaded)`)}`,
+				options,
+				required: true,
+			});
+
+			if (p.isCancel(selected)) {
+				p.cancel('Cancelled.');
+				process.exit(0);
+			}
+
+			const ids = selected as string[];
+
+			const confirm = await p.confirm({
+				message: `Delete ${ids.length} draft${ids.length !== 1 ? 's' : ''}?`,
+				initialValue: false,
+			});
+
+			if (p.isCancel(confirm) || !confirm) {
+				p.cancel('Cancelled.');
+				process.exit(0);
+			}
+
+			const deleteSpinner = p.spinner();
+			deleteSpinner.start(`Deleting ${ids.length} draft${ids.length !== 1 ? 's' : ''}…`);
+			for (const id of ids) {
+				await apiRequest('DELETE', `/social-sets/${socialSetId}/drafts/${id}`);
+			}
+			deleteSpinner.stop(
+				`${pc.green('✓')} Deleted ${ids.length} draft${ids.length !== 1 ? 's' : ''}`,
+			);
+		});
 }
