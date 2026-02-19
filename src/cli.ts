@@ -8,6 +8,7 @@ import { registerMeCommand } from './commands/me.js';
 import { registerMediaCommand } from './commands/media.js';
 import { registerSetupCommand } from './commands/setup.js';
 import { registerSocialSetsCommand } from './commands/social-sets.js';
+import { registerScheduleCommand } from './commands/schedule.js';
 import { registerTagsCommand } from './commands/tags.js';
 import { showBanner } from './utils/banner.js';
 import { setJsonMode } from './utils/output.js';
@@ -44,6 +45,7 @@ export function createCli(): Command {
 	registerTagsCommand(program);
 	registerMediaCommand(program);
 	registerConfigCommand(program);
+	registerScheduleCommand(program);
 
 	return program;
 }

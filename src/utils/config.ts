@@ -178,3 +178,28 @@ export function getLocalConfigFile(): string {
 export function getGlobalConfigDir(): string {
 	return GLOBAL_CONFIG_DIR;
 }
+
+export const DEFAULT_TIMEZONE = 'America/Los_Angeles';
+
+export function getDefaultTimezone(): string {
+	const localPath = path.join(process.cwd(), LOCAL_CONFIG_FILE);
+	const localConfig = readConfigFile(localPath);
+	if (localConfig?.defaultTimezone) return localConfig.defaultTimezone;
+
+	const globalConfig = readConfigFile(GLOBAL_CONFIG_FILE);
+	if (globalConfig?.defaultTimezone) return globalConfig.defaultTimezone;
+
+	return DEFAULT_TIMEZONE;
+}
+
+export function tzLabel(tz: string): string {
+	try {
+		const parts = new Intl.DateTimeFormat('en-US', {
+			timeZone: tz,
+			timeZoneName: 'short',
+		}).formatToParts(new Date());
+		return parts.find((p) => p.type === 'timeZoneName')?.value ?? tz;
+	} catch {
+		return tz;
+	}
+}

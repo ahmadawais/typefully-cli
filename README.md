@@ -48,6 +48,7 @@ typefully setup
 tfly                              # interactive — pick text, platform, schedule
 tfly "Hello, world!"              # instant draft from text
 
+tfly schedule                     # interactive — browse drafts and schedule one
 tfly rm                           # interactive — pick drafts to delete
 tfly rm <draft_id>                # delete a specific draft
 
@@ -104,6 +105,8 @@ typefully config set-default 123 --location global
 typefully config set-default 123 --scope local         # --scope is an alias for --location
 typefully config set-platforms                         # interactive multiselect
 typefully config set-platforms --platforms x,linkedin,threads
+typefully config set-timezone                          # interactive — pick from common IANA timezones
+typefully config set-timezone --timezone America/New_York
 ```
 
 ### User & Social Sets
@@ -113,6 +116,19 @@ typefully me
 typefully social-sets list
 typefully social-sets get [social_set_id]
 ```
+
+### Interactive Scheduler
+
+```bash
+tfly schedule
+```
+
+Browse all drafts and schedule one with a keyboard-only flow:
+
+- **Happy path** — `↑↓ Enter` pick draft → `Enter` next free slot → `Enter` confirm → `Enter` open in browser
+- **Custom time** — select "Custom date & time", enter date (`YYYY-MM-DD`) and time (`HH:MM`), confirm
+
+Timezone defaults to PST. Change it with `tfly config set-timezone`.
 
 ### Drafts
 
@@ -207,7 +223,8 @@ Config files are stored as JSON with `0600` permissions:
 {
   "apiKey": "typ_xxxx",
   "defaultSocialSetId": 12345,
-  "defaultPlatforms": ["x", "linkedin"]
+  "defaultPlatforms": ["x", "linkedin"],
+  "defaultTimezone": "America/Los_Angeles"
 }
 ```
 

@@ -3,7 +3,7 @@
 > **This document is the authoritative contract for the Typefully CLI.**
 > All commands, options, arguments, output shapes, and behaviors described here must be satisfied by any conforming implementation.
 
-Last updated: 2026-02-18
+Last updated: 2026-02-19
 
 ---
 
@@ -35,6 +35,8 @@ Last updated: 2026-02-18
    - [config show](#config-show)
    - [config set-default](#config-set-default)
    - [config set-platforms](#config-set-platforms)
+   - [config set-timezone](#config-set-timezone)
+   - [schedule](#schedule)
    - [rm (alias)](#rm-alias)
    - [Default command (tfly)](#default-command-tfly)
 7. [Thread Syntax](#thread-syntax)
@@ -96,7 +98,8 @@ The banner is shown once per invocation before the first command action, **unles
 {
   "apiKey": "typ_xxxx",
   "defaultSocialSetId": 12345,
-  "defaultPlatforms": ["x", "linkedin"]
+  "defaultPlatforms": ["x", "linkedin"],
+  "defaultTimezone": "America/Los_Angeles"
 }
 ```
 
@@ -784,6 +787,92 @@ tfly config set-platforms [options]
   "config_path": "/Users/you/.config/typefully/config.json"
 }
 ```
+
+---
+
+### `config set-timezone`
+
+Sets the default timezone used when entering custom schedule times.
+
+```
+typefully config set-timezone [options]
+tfly config set-timezone [options]
+```
+
+**Options**
+
+| Flag | Description |
+|------|-------------|
+| `--timezone <tz>` | IANA timezone name (skips interactive). |
+| `--location <global\|local>` | Where to save: `global` or `local`. Interactive if omitted. |
+| `--scope <global\|local>` | Alias for `--location`. |
+
+**Behavior**
+
+- If `--timezone` is omitted: shows a clack `select` with 14 common IANA timezones plus a "Custom" option that prompts for free-text input.
+- The entered value is validated via `Intl.DateTimeFormat` before saving.
+- Default when not configured: `America/Los_Angeles` (PST/PDT).
+- Stored as `defaultTimezone` in the config JSON.
+
+**JSON output shape**
+
+```json
+{
+  "success": true,
+  "default_timezone": "America/Los_Angeles",
+  "config_path": "/Users/you/.config/typefully/config.json"
+}
+```
+
+---
+
+### `schedule`
+
+Interactively browse drafts and schedule one. Optimised for keyboard-only use.
+
+```
+tfly schedule
+typefully schedule
+```
+
+**No arguments or options.**
+
+**Behavior**
+
+1. Fetches up to 50 drafts (status `draft` or `scheduled`) for the default social set.
+2. Fetches each draft's full details in parallel to load post text.
+3. clack `select` — pick a draft. Each option shows the post preview and current status / scheduled time.
+4. clack `select` — choose when to publish, with **Next free slot** pre-selected:
+   - `Next free slot` — sends `publish_at: "next-free-slot"` to the API.
+   - `Custom date & time` — prompts for date (`YYYY-MM-DD`) and time (`HH:MM`, 24h) in the configured timezone, then converts to UTC ISO 8601 before sending.
+5. clack `confirm` — confirm the schedule (defaults to yes).
+6. Calls `PATCH /social-sets/:id/drafts/:draft_id` with `{ publish_at }`.
+7. Displays the updated draft.
+8. clack `confirm` — **Open in browser?** (defaults to yes). Opens `share_url` or `https://typefully.com/?d=<id>` using the platform-native open command.
+
+**Happy path (keyboard flow)**
+
+```
+↑↓ Enter   — pick draft
+Enter      — confirm "Next free slot" (pre-selected)
+Enter      — confirm schedule
+Enter      — open in browser
+```
+
+**Custom time flow** (breaks the enter-only path intentionally)
+
+```
+↑↓ Enter   — pick draft
+↓ Enter    — select "Custom date & time"
+<date> Enter
+<time> Enter
+Enter      — confirm schedule
+Enter      — open in browser
+```
+
+Cancelling at any prompt (Ctrl+C or selecting No on confirm) exits cleanly with code 0.
+
+**JSON output shape** — single draft object (same as `drafts schedule`).
 
 ---
 
