@@ -4,7 +4,7 @@ description: >
   Create, schedule, and manage social media posts via Typefully. ALWAYS use this
   skill when asked to draft, schedule, post, or check tweets, posts, threads, or
   social media content for Twitter/X, LinkedIn, Threads, Bluesky, or Mastodon.
-last-updated: 2026-02-18
+last-updated: 2026-06-08
 allowed-tools: Bash(typefully*)
 ---
 
@@ -111,6 +111,22 @@ Follow this workflow when creating posts:
    **For multi-platform posts**: See [Publishing to Multiple Platforms](#publishing-to-multiple-platforms) — always use a single draft, even when content differs per platform.
 
 4. **Schedule or publish** as needed
+
+## Source Evidence for X Content
+
+Before creating X/Twitter drafts from market, audience, or competitor research,
+ground the post in source material. Use links, notes, exports, or research
+already present in the user's project.
+
+If the project already includes a TweetClaw or OpenClaw research workflow, treat
+its outputs as source evidence before drafting. Useful inputs include searched
+tweets, reply inspection, user lookup, follower exports, media lookups, monitor
+events, and webhook summaries.
+
+Do not configure TweetClaw or publish through TweetClaw from this skill.
+Typefully remains the place to create, schedule, and publish drafts. When the
+user wants private context attached to a draft, put concise source notes in
+`--scratchpad`.
 
 ## Working with Tags
 
