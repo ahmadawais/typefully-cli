@@ -7,6 +7,10 @@ A TypeScript CLI and AI agent skill for drafting, scheduling, and managing socia
 
 Built on the [Typefully API](https://typefully.com/docs/api). [Typefully](https://typefully.com) is a writing and scheduling app used by 200k+ top creators and teams to grow on X, LinkedIn, Threads, and Bluesky.
 
+## Optional X/Twitter Research Companion
+
+Hermes Agent users who research X/Twitter before drafting or scheduling can pair Typefully CLI with [Hermes Tweet](https://github.com/Xquik-dev/hermes-tweet). Use Hermes Tweet for X account context, search, monitoring, follower exports, and approval-gated drafts, then use Typefully CLI for final scheduling workflows.
+
 ## Setup
 
 ### 1. Install
