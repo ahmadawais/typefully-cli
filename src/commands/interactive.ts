@@ -6,7 +6,7 @@ import { getAllConnectedPlatforms, getFirstConnectedPlatform, renderDraft } from
 
 type DraftRaw = Record<string, unknown>;
 
-/** Direct (non-interactive) draft creation — used when text is passed as a positional arg. */
+/** Direct (non-interactive) draft creation - used when text is passed as a positional arg. */
 async function createDraftDirect(text: string): Promise<void> {
 	const id = requireSocialSetId(null);
 
@@ -35,14 +35,14 @@ async function createDraftDirect(text: string): Promise<void> {
 	display(data, () => renderDraft(data as DraftRaw, 'Draft created'));
 }
 
-/** Interactive draft creation via clack — used when no text is provided. */
+/** Interactive draft creation via clack - used when no text is provided. */
 async function createDraftInteractive(): Promise<void> {
 	const id = requireSocialSetId(null);
 
 	const textResult = await p.text({
 		message: 'What do you want to post?',
 		placeholder: 'Your post content… (use --- on a new line to split into a thread)',
-		validate: (v) => (!v.trim() ? 'Post content is required.' : undefined),
+		validate: (value) => (!value?.trim() ? 'Post content is required.' : undefined),
 	});
 	if (p.isCancel(textResult)) {
 		p.cancel('Cancelled.');

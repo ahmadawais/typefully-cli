@@ -6,6 +6,7 @@ import path from 'node:path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 const CLI_PATH = path.resolve(__dirname, '..', 'dist', 'index.js');
+const PACKAGE_VERSION = '0.3.0';
 
 interface CliResult {
 	readonly code: number | null;
@@ -130,13 +131,13 @@ describe('CLI basics', () => {
 	it('should output version with -v', async () => {
 		const result = await runCli(['-v']);
 		expect(result.code).toBe(0);
-		expect(result.stdout.trim()).toBe('0.0.1');
+		expect(result.stdout.trim()).toBe(PACKAGE_VERSION);
 	});
 
 	it('should output version with --version', async () => {
 		const result = await runCli(['--version']);
 		expect(result.code).toBe(0);
-		expect(result.stdout.trim()).toBe('0.0.1');
+		expect(result.stdout.trim()).toBe(PACKAGE_VERSION);
 	});
 
 	it('should show help with --help', async () => {
